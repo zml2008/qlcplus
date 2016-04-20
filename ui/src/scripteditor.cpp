@@ -263,7 +263,7 @@ void ScriptEditor::slotAddWait()
     QVBoxLayout dLayout(&dialog);
 
     dLayout.addWidget(new QLabel(tr("Enter the desired time")));
-    SpeedDial *sd = new SpeedDial(this);
+    SpeedDial *sd = new SpeedDial(this, tr("Time"));
     ushort dialMask = sd->visibilityMask();
     dialMask = (dialMask & ~SpeedDial::Infinite);
     dialMask = (dialMask & ~SpeedDial::Tap);

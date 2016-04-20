@@ -70,11 +70,20 @@ void FocusSpinBox::focusInEvent(QFocusEvent* event)
         emit focusGained();
 }
 
+void FocusSpinBox::stepBy(int amount)
+{
+    emit valueStepped(amount);
+}
+
 /****************************************************************************
  * SpeedDial
  ****************************************************************************/
+SpeedDial::SpeedDial(QWidget* parent) : SpeedDial(parent, NULL)
+{
 
-SpeedDial::SpeedDial(QWidget* parent)
+}
+
+SpeedDial::SpeedDial(QWidget* parent, QString label)
     : QGroupBox(parent)
     , m_timer(new QTimer(this))
     , m_dial(NULL)
@@ -96,24 +105,15 @@ SpeedDial::SpeedDial(QWidget* parent)
     layout()->setMargin(2);
 
     QHBoxLayout* topHBox = new QHBoxLayout();
-    QVBoxLayout* pmVBox1 = new QVBoxLayout();
-    QVBoxLayout* taVBox3 = new QVBoxLayout();
+    QHBoxLayout* bottomHBox = new QHBoxLayout();
     layout()->addItem(topHBox);
+    layout()->addItem(bottomHBox);
 
-    m_plus = new QToolButton(this);
-    m_plus->setIconSize(QSize(32, 32));
-    m_plus->setIcon(QIcon(":/edit_add.png"));
-    pmVBox1->addWidget(m_plus, Qt::AlignVCenter | Qt::AlignLeft);
-    connect(m_plus, SIGNAL(pressed()), this, SLOT(slotPlusMinus()));
-    connect(m_plus, SIGNAL(released()), this, SLOT(slotPlusMinus()));
 
-    m_minus = new QToolButton(this);
-    m_minus->setIconSize(QSize(32, 32));
-    m_minus->setIcon(QIcon(":/edit_remove.png"));
-    pmVBox1->addWidget(m_minus, Qt::AlignVCenter | Qt::AlignLeft);
-    connect(m_minus, SIGNAL(pressed()), this, SLOT(slotPlusMinus()));
-    connect(m_minus, SIGNAL(released()), this, SLOT(slotPlusMinus()));
-    topHBox->addItem(pmVBox1);
+    if (label != NULL)
+    {
+        topHBox->addWidget(new QLabel(label, this));
+    }
 
     m_dial = new QDial(this);
     m_dial->setWrapping(true);
@@ -125,14 +125,11 @@ SpeedDial::SpeedDial(QWidget* parent)
 
     m_tap = new QPushButton(tr("Tap"), this);
     m_tap->setStyleSheet(tapDefaultSS);
-    m_tap->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-    taVBox3->addWidget(m_tap);
+    topHBox->addWidget(m_tap);
     connect(m_tap, SIGNAL(clicked()), this, SLOT(slotTapClicked()));
 
-    topHBox->addItem (taVBox3);
-
     QHBoxLayout* timeHBox = new QHBoxLayout();
-    layout()->addItem(timeHBox);
+    bottomHBox->addItem(timeHBox);
 
     m_hrs = new FocusSpinBox(this);
     m_hrs->setRange(0, HRS_MAX);
@@ -142,6 +139,7 @@ SpeedDial::SpeedDial(QWidget* parent)
     timeHBox->addWidget(m_hrs);
     connect(m_hrs, SIGNAL(valueChanged(int)), this, SLOT(slotHoursChanged()));
     connect(m_hrs, SIGNAL(focusGained()), this, SLOT(slotSpinFocusGained()));
+    connect(m_hrs, SIGNAL(valueStepped(int)), this, SLOT(slotTimeSteppedBy(int)));
 
     m_min = new FocusSpinBox(this);
     m_min->setRange(0, MIN_MAX);
@@ -151,6 +149,7 @@ SpeedDial::SpeedDial(QWidget* parent)
     timeHBox->addWidget(m_min);
     connect(m_min, SIGNAL(valueChanged(int)), this, SLOT(slotMinutesChanged()));
     connect(m_min, SIGNAL(focusGained()), this, SLOT(slotSpinFocusGained()));
+    connect(m_min, SIGNAL(valueStepped(int)), this, SLOT(slotTimeSteppedBy(int)));
 
     m_sec = new FocusSpinBox(this);
     m_sec->setRange(0, SEC_MAX);
@@ -160,19 +159,22 @@ SpeedDial::SpeedDial(QWidget* parent)
     timeHBox->addWidget(m_sec);
     connect(m_sec, SIGNAL(valueChanged(int)), this, SLOT(slotSecondsChanged()));
     connect(m_sec, SIGNAL(focusGained()), this, SLOT(slotSpinFocusGained()));
+    connect(m_sec, SIGNAL(valueStepped(int)), this, SLOT(slotTimeSteppedBy(int)));
 
     m_ms = new FocusSpinBox(this);
     m_ms->setRange(0, MS_MAX);
     m_ms->setSuffix("ms");
-    m_ms->setButtonSymbols(QSpinBox::NoButtons);
+    m_ms->setButtonSymbols(QSpinBox::PlusMinus);
     m_ms->setToolTip(tr("Milliseconds"));
     timeHBox->addWidget(m_ms);
     connect(m_ms, SIGNAL(valueChanged(int)), this, SLOT(slotMSChanged()));
     connect(m_ms, SIGNAL(focusGained()), this, SLOT(slotSpinFocusGained()));
+    connect(m_ms, SIGNAL(valueStepped(int)), this, SLOT(slotTimeSteppedBy(int)));
 
     m_infiniteCheck = new QCheckBox(this);
     m_infiniteCheck->setText(tr("Infinite"));
-    layout()->addWidget(m_infiniteCheck);
+    m_infiniteCheck->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
+    bottomHBox->addWidget(m_infiniteCheck);
     connect(m_infiniteCheck, SIGNAL(toggled(bool)), this, SLOT(slotInfiniteChecked(bool)));
 
     m_focus = m_ms;
@@ -319,37 +321,12 @@ int SpeedDial::dialDiff(int value, int previous, int step)
     return diff;
 }
 
-void SpeedDial::slotPlusMinus()
+void SpeedDial::slotTimeSteppedBy(int amount)
 {
-    if (m_minus->isDown() == true || m_plus->isDown() == true)
-    {
-        slotPlusMinusTimeout();
-        m_timer->start(TIMER_HOLD);
+    if (m_value == (int) Function::infiniteSpeed()) {
+        return;
     }
-    else
-    {
-        m_timer->stop();
-    }
-}
-
-void SpeedDial::slotPlusMinusTimeout()
-{
-    if (m_minus->isDown() == true)
-    {
-        if (m_dial->value() == m_dial->minimum())
-            m_dial->setValue(m_dial->maximum()); // Wrap around
-        else
-            m_dial->setValue(m_dial->value() - m_dial->singleStep()); // Normal increment
-        m_timer->start(TIMER_REPEAT);
-    }
-    else if (m_plus->isDown() == true)
-    {
-        if (m_dial->value() == m_dial->maximum())
-            m_dial->setValue(m_dial->minimum()); // Wrap around
-        else
-            m_dial->setValue(m_dial->value() + m_dial->singleStep()); // Normal increment
-        m_timer->start(TIMER_REPEAT);
-    }
+    setSpinValues(spinValues() + amount);
 }
 
 void SpeedDial::slotDialChanged(int value)
@@ -452,9 +429,7 @@ void SpeedDial::slotMSChanged()
 
 void SpeedDial::slotInfiniteChecked(bool state)
 {
-    m_minus->setEnabled(!state);
     m_dial->setEnabled(!state);
-    m_plus->setEnabled(!state);
     m_hrs->setEnabled(!state);
     m_min->setEnabled(!state);
     m_sec->setEnabled(!state);
@@ -542,13 +517,11 @@ void SpeedDial::setVisibilityMask(quint16 mask)
 {
     if (mask & PlusMinus)
     {
-        m_plus->show();
-        m_minus->show();
+        m_ms->setButtonSymbols(QSpinBox::PlusMinus);
     }
     else
     {
-        m_plus->hide();
-        m_minus->hide();
+        m_ms->setButtonSymbols(QSpinBox::NoButtons);
     }
 
     if (mask & Dial) m_dial->show();

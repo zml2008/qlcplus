@@ -89,6 +89,7 @@ public:
      ************************************************************************/
 public:
     VCSpeedDial(QWidget* parent, Doc* doc);
+    VCSpeedDial(QWidget* parent, Doc* doc, QString label);
     ~VCSpeedDial();
 
     /** @reimp */

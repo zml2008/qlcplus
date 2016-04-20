@@ -46,8 +46,7 @@ TimingsTool::TimingsTool(ShowItem *item, QWidget *parent)
     QBoxLayout* lay = new QBoxLayout(QBoxLayout::TopToBottom, this);
 
     /* Create dials */
-    m_startDial = new SpeedDial(this);
-    m_startDial->setTitle(tr("Start Time"));
+    m_startDial = new SpeedDial(this, tr("Start Time"));
     ushort dialMask = m_startDial->visibilityMask();
     dialMask = (dialMask & ~SpeedDial::Infinite);
     dialMask = (dialMask & ~SpeedDial::Tap);
@@ -57,8 +56,7 @@ TimingsTool::TimingsTool(ShowItem *item, QWidget *parent)
     connect(m_startDial, SIGNAL(valueChanged(int)),
             this, SLOT(slotStartTimeChanged(int)));
 
-    m_durationDial = new SpeedDial(this);
-    m_durationDial->setTitle(tr("Duration"));
+    m_durationDial = new SpeedDial(this, tr("Duration"));
     m_durationDial->setVisibilityMask(dialMask);
     m_durationDial->setValue(m_item->getDuration());
     layout()->addWidget(m_durationDial);

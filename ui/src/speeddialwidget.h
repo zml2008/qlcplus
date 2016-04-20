@@ -21,6 +21,7 @@
 #define SPEEDDIALWIDGET_H
 
 #include <QWidget>
+#include <QToolButton>
 
 class SpeedDial;
 class QGroupBox;
@@ -74,10 +75,13 @@ signals:
     void holdChanged(int ms);
     void holdTapped();
 
+    void deletePressed();
+
 private:
     SpeedDial* m_fadeIn;
     SpeedDial* m_fadeOut;
     SpeedDial* m_hold;
+    QToolButton* m_deleteButton;
 
     /************************************************************************
      * Optional text

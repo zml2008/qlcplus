@@ -1040,7 +1040,7 @@ bool VCFrame::loadXML(QXmlStreamReader &root)
         else if (root.name() == KXMLQLCVCSpeedDial)
         {
             /* Create a new speed dial into its parent */
-            VCSpeedDial* dial = new VCSpeedDial(this, m_doc);
+            VCSpeedDial* dial = new VCSpeedDial(this, m_doc, NULL);
             if (dial->loadXML(root) == false)
                 delete dial;
             else

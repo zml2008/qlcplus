@@ -26,13 +26,7 @@
 #include "speeddialwidget.h"
 #include "mastertimer.h"
 #include "speeddial.h"
-#include "apputil.h"
 
-#define WINDOW_FLAGS Qt::WindowFlags( \
-    (Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::Window | \
-     Qt::WindowStaysOnTopHint | Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint))
-
-#define SETTINGS_GEOMETRY "speeddialwidget/geometry"
 #define SETTINGS_DIRECTION "speeddialwidget/direction"
 
 SpeedDialWidget::SpeedDialWidget(QWidget* parent)
@@ -47,8 +41,6 @@ SpeedDialWidget::SpeedDialWidget(QWidget* parent)
     QVariant var;
     QBoxLayout* lay = NULL;
 
-    setWindowFlags(WINDOW_FLAGS);
-
     /* Layout with customizable direction */
     var = settings.value(SETTINGS_DIRECTION);
     if (var.isValid() == true)
@@ -57,47 +49,41 @@ SpeedDialWidget::SpeedDialWidget(QWidget* parent)
         lay = new QBoxLayout(QBoxLayout::TopToBottom, this);
 
     /* Create dials */
-    m_fadeIn = new SpeedDial(this);
-    m_fadeIn->setTitle(tr("Fade In"));
+    m_fadeIn = new SpeedDial(this, tr("Fade In"));
     layout()->addWidget(m_fadeIn);
     connect(m_fadeIn, SIGNAL(valueChanged(int)), this, SIGNAL(fadeInChanged(int)));
     connect(m_fadeIn, SIGNAL(tapped()), this, SIGNAL(fadeInTapped()));
 
-    m_fadeOut = new SpeedDial(this);
-    m_fadeOut->setTitle(tr("Fade Out"));
+    m_fadeOut = new SpeedDial(this, tr("Fade Out"));
     layout()->addWidget(m_fadeOut);
     connect(m_fadeOut, SIGNAL(valueChanged(int)), this, SIGNAL(fadeOutChanged(int)));
     connect(m_fadeOut, SIGNAL(tapped()), this, SIGNAL(fadeOutTapped()));
 
-    m_hold = new SpeedDial(this);
-    m_hold->setTitle(tr("Hold"));
+    m_hold = new SpeedDial(this, tr("Hold"));
     layout()->addWidget(m_hold);
     connect(m_hold, SIGNAL(valueChanged(int)), this, SIGNAL(holdChanged(int)));
     connect(m_hold, SIGNAL(tapped()), this, SIGNAL(holdTapped()));
 
+    QHBoxLayout *optTextDeleteLay = new QHBoxLayout;
+    lay->addLayout(optTextDeleteLay);
     /* Optional text */
     m_optionalTextGroup = new QGroupBox(this);
-    layout()->addWidget(m_optionalTextGroup);
-    new QVBoxLayout(m_optionalTextGroup);
+    optTextDeleteLay->addWidget(m_optionalTextGroup);
+    new QHBoxLayout(m_optionalTextGroup);
     m_optionalTextEdit = new QLineEdit(m_optionalTextGroup);
     m_optionalTextGroup->layout()->addWidget(m_optionalTextEdit);
     m_optionalTextGroup->setVisible(false);
     connect(m_optionalTextEdit, SIGNAL(textEdited(const QString&)),
             this, SIGNAL(optionalTextEdited(const QString&)));
 
-    lay->addStretch();
-
-    /* Position */
-    var = settings.value(SETTINGS_GEOMETRY);
-    if (var.isValid() == true)
-        this->restoreGeometry(var.toByteArray());
-    AppUtil::ensureWidgetIsVisible(this);
+    m_deleteButton = new QToolButton(this);
+    m_deleteButton->setText(tr("Delete"));
+    optTextDeleteLay->addWidget(m_deleteButton);
+    connect(m_deleteButton, SIGNAL(clicked()), this, SIGNAL(deletePressed()));
 }
 
 SpeedDialWidget::~SpeedDialWidget()
 {
-    QSettings settings;
-    settings.setValue(SETTINGS_GEOMETRY, saveGeometry());
 }
 
 /****************************************************************************

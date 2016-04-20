@@ -209,15 +209,11 @@ private slots:
     void slotFadeInDialChanged(int ms);
     void slotFadeOutDialChanged(int ms);
     void slotHoldDialChanged(int ms);
-    void slotDialDestroyed(QObject *);
     void slotCueNameEdited(const QString& name);
 
 protected:
     /** @reimp */
     void showEvent(QShowEvent* ev);
-
-    /** @reimp */
-    void hideEvent(QHideEvent* ev);
 
     /** @reimp */
     void resizeEvent(QResizeEvent *ev);
@@ -232,7 +228,6 @@ private:
     QToolButton* m_recordCueButton;
     QTreeView* m_cueStackView;
     SpeedDialWidget *m_speedDials;
-    QModelIndex m_cueDeleteIconIndex;
 
     /*********************************************************************
      * Load & Save

@@ -15,9 +15,11 @@ APPVERSION = 4.10.4 GIT
 #############################################################################
 
 # Treat all compiler warnings as errors
-QMAKE_CXXFLAGS += -Werror
+QMAKE_CXXFLAGS += -Werror -std=c++11
 
 CONFIG         += warn_on
+
+CONFIG += c++11
 
 # Build everything in the order specified in .pro files
 CONFIG         += ordered

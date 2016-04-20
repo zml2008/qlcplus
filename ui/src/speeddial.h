@@ -30,7 +30,6 @@ class QCheckBox;
 class QLabel;
 class QTimer;
 class QDial;
-class QTime;
 
 /** @addtogroup ui UI
  * @{
@@ -53,9 +52,11 @@ public:
 
 signals:
     void focusGained();
+    void valueStepped(int amount);
 
 protected:
     void focusInEvent(QFocusEvent* event);
+    void stepBy(int steps);
 };
 
 /****************************************************************************
@@ -81,7 +82,8 @@ public:
         Infinite     = 1 << 7,
     };
 
-    SpeedDial(QWidget* parent);
+    SpeedDial(QWidget *parent);
+    SpeedDial(QWidget* parent, QString title);
     ~SpeedDial();
 
     /**
@@ -117,8 +119,7 @@ private:
     int dialDiff(int value, int previous, int step);
 
 private slots:
-    void slotPlusMinus();
-    void slotPlusMinusTimeout();
+    void slotTimeSteppedBy(int amount);
     void slotDialChanged(int value);
     void slotHoursChanged();
     void slotMinutesChanged();
@@ -132,8 +133,6 @@ private slots:
 private:
     QTimer* m_timer;
     QDial* m_dial;
-    QToolButton* m_plus;
-    QToolButton* m_minus;
     FocusSpinBox* m_hrs;
     FocusSpinBox* m_min;
     FocusSpinBox* m_sec;

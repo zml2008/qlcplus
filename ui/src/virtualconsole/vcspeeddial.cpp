@@ -54,7 +54,11 @@ static const QString presetBtnSS = "QPushButton { background-color: %1; height: 
  * Initialization
  ****************************************************************************/
 
-VCSpeedDial::VCSpeedDial(QWidget* parent, Doc* doc)
+VCSpeedDial::VCSpeedDial(QWidget *parent, Doc *doc) : VCSpeedDial(parent, doc, NULL)
+{
+}
+
+VCSpeedDial::VCSpeedDial(QWidget* parent, Doc* doc, QString label)
     : VCWidget(parent, doc)
     , m_currentFactor(1)
     , m_resetFactorOnDialChange(false)
@@ -69,7 +73,7 @@ VCSpeedDial::VCSpeedDial(QWidget* parent, Doc* doc)
     QHBoxLayout* speedDialHBox = new QHBoxLayout();
     vBox->addLayout(speedDialHBox);
 
-    m_dial = new SpeedDial(this);
+    m_dial = new SpeedDial(this, label);
     speedDialHBox->addWidget(m_dial);
     connect(m_dial, SIGNAL(valueChanged(int)), this, SLOT(slotDialValueChanged()));
     connect(m_dial, SIGNAL(tapped()), this, SLOT(slotDialTapped()));

@@ -342,12 +342,19 @@ void SimpleDesk::initBottomSide()
 
     grpLay2->addLayout(hbox);
 
+    QHBoxLayout *cueStackEditLayout = new QHBoxLayout;
+
     m_cueStackView = new QTreeView(this);
     m_cueStackView->setAllColumnsShowFocus(true);
     m_cueStackView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_cueStackView->setDragEnabled(true);
     m_cueStackView->setDragDropMode(QAbstractItemView::InternalMove);
-    m_cueStackGroup->layout()->addWidget(m_cueStackView);
+    cueStackEditLayout->addWidget(m_cueStackView);
+
+    createSpeedDials();
+    cueStackEditLayout->addWidget(m_speedDials);
+
+    grpLay2->addLayout(cueStackEditLayout);
 
     initChannelGroupsView();
 }
@@ -1061,6 +1068,7 @@ void SimpleDesk::updateCueStackButtons()
     m_stopCueStackButton->setEnabled(cueStack->isRunning());
     m_nextCueButton->setEnabled(cueStack->cues().size() > 0);
     m_previousCueButton->setEnabled(cueStack->cues().size() > 0);
+    m_editCueStackButton->setEnabled(cueStack->cues().size() > 0);
 }
 
 void SimpleDesk::replaceCurrentCue()
@@ -1076,9 +1084,13 @@ void SimpleDesk::replaceCurrentCue()
     {
         // Replace current cue values
         QModelIndex index = m_cueStackView->currentIndex();
-        QString name = cueStack->cues().at(index.row()).name();
+        Cue oldCue = cueStack->cues().at(index.row());
+        QString name = oldCue.name();
         Cue cue = m_engine->cue();
-        cue.setName(name);
+        cue.setName(oldCue.name());
+        cue.setFadeInSpeed(oldCue.fadeInSpeed());
+        cue.setFadeOutSpeed(oldCue.fadeOutSpeed());
+        cue.setDuration(oldCue.duration());
         cueStack->replaceCue(index.row(), cue);
     }
 }
@@ -1089,40 +1101,40 @@ void SimpleDesk::createSpeedDials()
         return;
 
     m_speedDials = new SpeedDialWidget(this);
-    m_speedDials->setAttribute(Qt::WA_DeleteOnClose);
+    m_speedDials->hide();
     connect(m_speedDials, SIGNAL(fadeInChanged(int)),
             this, SLOT(slotFadeInDialChanged(int)));
     connect(m_speedDials, SIGNAL(fadeOutChanged(int)),
             this, SLOT(slotFadeOutDialChanged(int)));
     connect(m_speedDials, SIGNAL(holdChanged(int)),
             this, SLOT(slotHoldDialChanged(int)));
-    connect(m_speedDials, SIGNAL(destroyed(QObject*)),
-            this, SLOT(slotDialDestroyed(QObject*)));
     connect(m_speedDials, SIGNAL(optionalTextEdited(const QString&)),
             this, SLOT(slotCueNameEdited(const QString&)));
-    m_speedDials->raise();
-    m_speedDials->show();
+    connect(m_speedDials, SIGNAL(deletePressed()), this, SLOT(slotDeleteCueClicked()));
 }
 
 void SimpleDesk::updateSpeedDials()
 {
     qDebug() << Q_FUNC_INFO;
 
-    if (m_speedDials == NULL)
-        return;
-
+    Q_ASSERT(m_speedDials != NULL);
     Q_ASSERT(m_cueStackView != NULL);
     Q_ASSERT(m_cueStackView->selectionModel() != NULL);
     QModelIndexList selected(m_cueStackView->selectionModel()->selectedRows());
+
+    if (m_editCueStackButton->isChecked() == false)
+    {
+        m_speedDials->hide();
+        return;
+    }
 
     CueStack* cueStack = m_engine->cueStack(m_selectedPlayback);
     Q_ASSERT(cueStack != NULL);
 
     if (selected.size() == 0)
     {
-        m_speedDials->setEnabled(false);
+        m_speedDials->hide();
 
-        m_speedDials->setWindowTitle(tr("No selection"));
         m_speedDials->setFadeInSpeed(0);
         m_speedDials->setFadeOutSpeed(0);
         m_speedDials->setDuration(0);
@@ -1132,7 +1144,7 @@ void SimpleDesk::updateSpeedDials()
     }
     else if (selected.size() == 1)
     {
-        m_speedDials->setEnabled(true);
+        m_speedDials->show();
 
         QModelIndex index = selected.first();
         Q_ASSERT(index.row() >= 0 && index.row() < cueStack->cues().size());
@@ -1150,9 +1162,8 @@ void SimpleDesk::updateSpeedDials()
     }
     else
     {
-        m_speedDials->setEnabled(true);
+        m_speedDials->show();
 
-        m_speedDials->setWindowTitle(tr("Multiple Cues"));
         m_speedDials->setFadeInSpeed(0);
         m_speedDials->setFadeOutSpeed(0);
         m_speedDials->setDuration(0);
@@ -1212,11 +1223,6 @@ void SimpleDesk::slotCueStackSelectionChanged()
 
     updateCueStackButtons();
 
-    // Destroy the existing delete icon
-    if (m_cueDeleteIconIndex.isValid() == true)
-        m_cueStackView->setIndexWidget(m_cueDeleteIconIndex, NULL);
-    m_cueDeleteIconIndex = QModelIndex();
-
     if (m_editCueStackButton->isChecked() == true)
     {
         CueStack* cueStack = currentCueStack();
@@ -1240,23 +1246,6 @@ void SimpleDesk::slotCueStackSelectionChanged()
         {
             m_universeGroup->setEnabled(false);
             resetUniverseSliders();
-        }
-
-        // Put a delete button on the first selected item
-        if (selected.size() > 0)
-        {
-            QModelIndex index = selected.first();
-            if (index.row() >= 0 && index.row() < cueStack->cues().size())
-            {
-                QPushButton* btn = new QPushButton(m_cueStackView);
-                btn->setToolTip(tr("Delete cue"));
-                btn->setFlat(true);
-                btn->setFixedSize(m_cueStackView->sizeHintForIndex(index));
-                btn->setIcon(QIcon(":/delete.png"));
-                m_cueStackView->setIndexWidget(index, btn);
-                m_cueDeleteIconIndex = index;
-                connect(btn, SIGNAL(clicked()), this, SLOT(slotDeleteCueClicked()));
-            }
         }
     }
     else
@@ -1324,14 +1313,6 @@ void SimpleDesk::slotCloneCueStackClicked()
     slotSelectPlayback(pb);
 }
 
-void SimpleDesk::slotDialDestroyed(QObject *)
-{
-    if (m_speedDials != NULL)
-        m_speedDials->deleteLater();
-    m_speedDials = NULL;
-    m_editCueStackButton->setChecked(false);
-}
-
 void SimpleDesk::slotEditCueStackClicked(bool state)
 {
     qDebug() << Q_FUNC_INFO;
@@ -1340,15 +1321,11 @@ void SimpleDesk::slotEditCueStackClicked(bool state)
 
     if (state == true)
     {
-        createSpeedDials();
         updateSpeedDials();
     }
     else
     {
         resetUniverseSliders();
-        if (m_speedDials != NULL)
-            m_speedDials->deleteLater();
-        m_speedDials = NULL;
     }
 }
 
@@ -1467,14 +1444,6 @@ void SimpleDesk::showEvent(QShowEvent* ev)
     }
     slotUpdateUniverseSliders();
     QWidget::showEvent(ev);
-}
-
-void SimpleDesk::hideEvent(QHideEvent* ev)
-{
-    if (m_speedDials != NULL)
-        m_speedDials->deleteLater();
-    m_speedDials = NULL;
-    QWidget::hideEvent(ev);
 }
 
 void SimpleDesk::resizeEvent(QResizeEvent *ev)
