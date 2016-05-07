@@ -311,12 +311,14 @@ void SimpleDesk::initBottomSide()
     m_stopCueStackButton->setIcon(QIcon(":/player_stop.png"));
     m_stopCueStackButton->setIconSize(QSize(32, 32));
     m_stopCueStackButton->setToolTip(tr("Stop cue stack"));
+    m_stopCueStackButton->setShortcut(QKeySequence(tr("Escape", "Stop cues")));
     hbox->addWidget(m_stopCueStackButton);
 
     m_nextCueButton = new QToolButton(this);
     m_nextCueButton->setIcon(QIcon(":/forward.png"));
     m_nextCueButton->setIconSize(QSize(32, 32));
     m_nextCueButton->setToolTip(tr("Next cue"));
+    m_nextCueButton->setShortcut(QKeySequence(tr("Space", "Next cue")));
     hbox->addWidget(m_nextCueButton);
 
     hbox->addStretch();
@@ -1045,6 +1047,10 @@ void SimpleDesk::initCueStack()
     qDebug() << Q_FUNC_INFO;
     CueStackModel* model = new CueStackModel(this);
     m_cueStackView->setModel(model);
+    m_cueStackView->setDragDropMode(QAbstractItemView::DragDrop);
+    m_cueStackView->setDragEnabled(true);
+    m_cueStackView->viewport()->setAcceptDrops(true);
+    m_cueStackView->setDropIndicatorShown(true);
 
     connect(m_previousCueButton, SIGNAL(clicked()), this, SLOT(slotPreviousCueClicked()));
     connect(m_nextCueButton, SIGNAL(clicked()), this, SLOT(slotNextCueClicked()));
@@ -1052,6 +1058,8 @@ void SimpleDesk::initCueStack()
     connect(m_cloneCueStackButton, SIGNAL(clicked()), this, SLOT(slotCloneCueStackClicked()));
     connect(m_editCueStackButton, SIGNAL(toggled(bool)), this, SLOT(slotEditCueStackClicked(bool)));
     connect(m_recordCueButton, SIGNAL(clicked()), this, SLOT(slotRecordCueClicked()));
+
+    connect(m_cueStackView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(slotSpecificCueSelected(QModelIndex)));
 
     connect(m_cueStackView->selectionModel(),
             SIGNAL(selectionChanged(const QItemSelection&,const QItemSelection&)),
@@ -1270,6 +1278,13 @@ void SimpleDesk::slotNextCueClicked()
     CueStack* cueStack = m_engine->cueStack(m_selectedPlayback);
     Q_ASSERT(cueStack != NULL);
     cueStack->nextCue();
+}
+
+void SimpleDesk::slotSpecificCueSelected(QModelIndex idx)
+{
+    CueStack* cueStack = m_engine->cueStack(m_selectedPlayback);
+    Q_ASSERT(cueStack != NULL);
+    cueStack->goToCue(idx.row());
 }
 
 void SimpleDesk::slotStopCueStackClicked()

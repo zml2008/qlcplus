@@ -95,6 +95,11 @@ void MasterTimer::stop()
     d_ptr->stop();
 }
 
+bool MasterTimer::isRunning()
+{
+    return d_ptr->isRunning();
+}
+
 void MasterTimer::timerTick()
 {
     Doc* doc = qobject_cast<Doc*> (parent());

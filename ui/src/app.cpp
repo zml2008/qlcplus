@@ -1234,6 +1234,8 @@ void App::slotRecentFileClicked(QAction *recent)
         InputOutputManager::instance()->updateList();
     if (Monitor::instance() != NULL)
         Monitor::instance()->updateView();
+    if (SimpleDesk::instance() != NULL)
+        SimpleDesk::instance()->resetUniverse();
 }
 
 /*****************************************************************************

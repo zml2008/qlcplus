@@ -200,6 +200,7 @@ private slots:
 
     void slotPreviousCueClicked();
     void slotNextCueClicked();
+    void slotSpecificCueSelected(QModelIndex idx);
     void slotStopCueStackClicked();
     void slotCloneCueStackClicked();
     void slotEditCueStackClicked(bool state);

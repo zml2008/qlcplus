@@ -50,6 +50,7 @@ CueStack::CueStack(Doc* doc)
     , m_elapsed(0)
     , m_previous(false)
     , m_next(false)
+    , m_nextCue(-1)
 {
     qDebug() << Q_FUNC_INFO << (void*) this;
     Q_ASSERT(doc != NULL);
@@ -287,6 +288,14 @@ void CueStack::nextCue()
         start();
 }
 
+void CueStack::goToCue(int index)
+{
+    qDebug() << Q_FUNC_INFO;
+    m_nextCue = index;
+    if (!isRunning())
+        start();
+}
+
 /****************************************************************************
  * Save & Load
  ****************************************************************************/
@@ -383,6 +392,11 @@ void CueStack::stop()
 {
     qDebug() << Q_FUNC_INFO;
     m_running = false;
+    if (!doc()->masterTimer()->isRunning())
+    {
+        delete m_fader;
+        m_fader = NULL;
+    }
 }
 
 bool CueStack::isRunning() const
@@ -493,6 +507,17 @@ void CueStack::write(QList<Universe*> ua)
         m_next = false;
         emit currentCueChanged(m_currentIndex);
     }
+    else if (m_nextCue != -1)
+    {
+        // nextCue() was requested by user
+        m_elapsed = 0;
+        int from = m_currentIndex;
+        int to = specificCue();
+        switchCue(from, to, ua);
+        m_nextCue = -1;
+        emit currentCueChanged(m_currentIndex);
+
+    }
 /*
     else if (m_elapsed >= duration())
     {
@@ -566,6 +591,22 @@ int CueStack::next()
 
     m_mutex.lock();
     m_currentIndex++;
+    if (m_currentIndex >= m_cues.size())
+        m_currentIndex = 0;
+    m_mutex.unlock();
+
+    return m_currentIndex;
+}
+
+int CueStack::specificCue()
+{
+    qDebug() << Q_FUNC_INFO;
+
+    if (m_cues.size() == 0)
+        return -1;
+
+    m_mutex.lock();
+    m_currentIndex = m_nextCue;
     if (m_currentIndex >= m_cues.size())
         m_currentIndex = 0;
     m_mutex.unlock();

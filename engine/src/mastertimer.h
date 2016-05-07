@@ -66,6 +66,9 @@ public:
     /** Stop the MasterTimer */
     void stop();
 
+    /** Return if the MasterTimer has been shut down **/
+    bool isRunning();
+
     /** Get the timer tick frequency in Hertz */
     static uint frequency();
 

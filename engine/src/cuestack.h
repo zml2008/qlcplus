@@ -210,6 +210,7 @@ public:
 
     void previousCue();
     void nextCue();
+    void goToCue(int index);
 
     void adjustIntensity(qreal fraction);
     qreal intensity() const;
@@ -249,6 +250,7 @@ public:
 private:
     int next();
     int previous();
+    int specificCue();
     void switchCue(int from, int to, const QList<Universe *> ua);
     void insertStartValue(FadeChannel& fc, const QList<Universe*> ua);
 
@@ -257,6 +259,7 @@ private:
     uint m_elapsed;
     bool m_previous;
     bool m_next;
+    int m_nextCue;
 };
 
 /** @} */
