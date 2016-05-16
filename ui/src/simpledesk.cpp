@@ -1264,7 +1264,7 @@ void SimpleDesk::slotCueStackSelectionChanged()
                 Cue cue = cueStack->cues()[index.row()];
                 m_engine->setCue(cue);
                 slotUniversePageChanged(m_universePageSpin->value());
-                m_sliderState->setText(tr("Editing cue %d").arg(index.row()));
+                m_sliderState->setText(tr("Editing cue %L1").arg(index.row()));
             }
         }
         else
