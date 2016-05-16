@@ -70,6 +70,10 @@ public:
     /** Get the value of a single channel */
     uchar value(uint channel) const;
 
+    QHash<uint, uchar> *values();
+
+    void setValues(QHash<uint, uchar> &values);
+
     bool hasChannel(uint channel);
 
     /** Set a complete cue to universe */

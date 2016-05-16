@@ -97,6 +97,18 @@ uchar SimpleDeskEngine::value(uint channel) const
         return 0;
 }
 
+QHash<uint, uchar> *SimpleDeskEngine::values()
+{
+    QMutexLocker locker(&m_mutex);
+    return new QHash<uint, uchar>(m_values);
+}
+
+void SimpleDeskEngine::setValues(QHash<uint, uchar> &values)
+{
+    QMutexLocker locker(&m_mutex);
+    m_values = QHash<uint, uchar>(values);
+}
+
 bool SimpleDeskEngine::hasChannel(uint channel)
 {
     QMutexLocker locker(&m_mutex);

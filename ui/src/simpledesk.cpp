@@ -247,6 +247,11 @@ void SimpleDesk::initTopSide()
 
     uniLay->addSpacing(50);
 
+    m_sliderState = new QLabel(this);
+    uniLay->addWidget(m_sliderState);
+
+    uniLay->addSpacing(50);
+
     QLabel *label = new QLabel(tr("Universe"));
     label->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
     uniLay->addWidget(label);
@@ -702,11 +707,17 @@ void SimpleDesk::slotUniversePageChanged(int page)
 
 void SimpleDesk::slotUniverseResetClicked()
 {
+    resetUniverse(true);
+}
+
+void SimpleDesk::resetUniverse(bool resetPage) {
     qDebug() << Q_FUNC_INFO;
     m_engine->resetUniverse(m_currentUniverse);
-    m_universePageSpin->setValue(1);
+    if (resetPage) {
+        m_universePageSpin->setValue(1);
+    }
     if (m_viewModeButton->isChecked() == false)
-        slotUniversePageChanged(1);
+        slotUniversePageChanged(m_universePageSpin->value());
     else
     {
         QHashIterator <quint32,FixtureConsole*> it(m_consoleList);
@@ -719,6 +730,7 @@ void SimpleDesk::slotUniverseResetClicked()
             fc->resetChannelsStylesheet();
         }
     }
+
 }
 
 void SimpleDesk::slotChannelResetClicked(quint32 fxID, quint32 channel)
@@ -1064,6 +1076,8 @@ void SimpleDesk::initCueStack()
     connect(m_cueStackView->selectionModel(),
             SIGNAL(selectionChanged(const QItemSelection&,const QItemSelection&)),
             this, SLOT(slotCueStackSelectionChanged()));
+
+    slotCueStackSelectionChanged();
 }
 
 void SimpleDesk::updateCueStackButtons()
@@ -1231,13 +1245,15 @@ void SimpleDesk::slotCueStackSelectionChanged()
 
     updateCueStackButtons();
 
+
     if (m_editCueStackButton->isChecked() == true)
     {
         CueStack* cueStack = currentCueStack();
         if (selected.size() == 0)
         {
-            resetUniverseSliders();
+            resetUniverse(false);
             m_universeGroup->setEnabled(false);
+            m_sliderState->setText(tr("No cues selected"));
         }
         else if (selected.size() == 1)
         {
@@ -1248,17 +1264,20 @@ void SimpleDesk::slotCueStackSelectionChanged()
                 Cue cue = cueStack->cues()[index.row()];
                 m_engine->setCue(cue);
                 slotUniversePageChanged(m_universePageSpin->value());
+                m_sliderState->setText(tr("Editing cue %d").arg(index.row()));
             }
         }
         else
         {
             m_universeGroup->setEnabled(false);
-            resetUniverseSliders();
+            resetUniverse(false);
+            m_sliderState->setText(tr("Multiple cues selected; cannot edit"));
         }
     }
     else
     {
         m_universeGroup->setEnabled(true);
+        m_sliderState->setText(tr("Live"));
     }
 
     updateSpeedDials();
@@ -1332,7 +1351,7 @@ void SimpleDesk::slotEditCueStackClicked(bool state)
 {
     qDebug() << Q_FUNC_INFO;
 
-    slotCueStackSelectionChanged();
+
 
     if (state == true)
     {
@@ -1340,8 +1359,20 @@ void SimpleDesk::slotEditCueStackClicked(bool state)
     }
     else
     {
-        resetUniverseSliders();
+        resetUniverse(false);
+        // Go to the newly edited cue so that changes take effect
+        QModelIndexList selected(m_cueStackView->selectionModel()->selectedRows());
+        CueStack * cues = currentCueStack();
+        foreach (QModelIndex idx, selected) {
+            if (idx.row() == cues->currentIndex())
+            {
+                cues->goToCue(cues->currentIndex());
+                break;
+            }
+
+        }
     }
+    slotCueStackSelectionChanged();
 }
 
 void SimpleDesk::slotRecordCueClicked()

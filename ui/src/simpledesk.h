@@ -26,6 +26,7 @@
 #include <QWidget>
 #include <QList>
 #include <QHash>
+#include <QLabel>
 
 class GrandMasterSlider;
 class SimpleDeskEngine;
@@ -109,6 +110,7 @@ private:
     void resetUniverseSliders();
     void initSliderView(bool fullMode);
     void initChannelGroupsView();
+    void resetUniverse(bool resetPage);
 
 private slots:
     void slotUniversesComboChanged(int index);
@@ -125,6 +127,7 @@ private slots:
 private:
     QFrame* m_universeGroup;
     QComboBox* m_universesCombo;
+    QLabel *m_sliderState;
     QToolButton* m_viewModeButton;
     QToolButton* m_universePageUpButton;
     QSpinBox* m_universePageSpin;
@@ -133,6 +136,7 @@ private:
     GrandMasterSlider* m_grandMasterSlider;
     QScrollArea* scrollArea;
     QScrollArea* m_chGroupsArea;
+    QHash<uint, uchar> *m_oldValues;
 
     /**
      * List holding pointers to the current view sliders.
